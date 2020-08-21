@@ -1,0 +1,17 @@
+{
+	"name": "mityay2004/delight-php-auth-2020",
+	"description": "Authentication for PHP optimized for Codeigniter 3. Simple, lightweight and secure.",
+	"require": {
+		"php": ">=5.6.0",
+		"ext-openssl": "*"
+	},
+	"type": "library",
+	"keywords": [ "auth", "authentication", "login", "security" ],
+	"homepage": "https://github.com/mityay2004/delight-php-auth-2020",
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {
+			"Delight\\Auth\\": "src/"
+		}
+	}
+}
