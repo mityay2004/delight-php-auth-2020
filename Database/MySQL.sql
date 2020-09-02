@@ -7,21 +7,38 @@
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `email` varchar(249)  NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(249) NOT NULL,
   `password` varchar(255) NOT NULL,
   `username` varchar(100) DEFAULT NULL,
-  `status` tinyint(2) unsigned NOT NULL DEFAULT '0',
-  `verified` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `resettable` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `roles_mask` int(10) unsigned NOT NULL DEFAULT '0',
-  `registered` int(10) unsigned NOT NULL,
-  `last_login` int(10) unsigned DEFAULT NULL,
-  `force_logout` mediumint(7) unsigned NOT NULL DEFAULT '0',
+  `avatar` varchar(512) DEFAULT NULL,
+  `status` tinyint(2) UNSIGNED NOT NULL DEFAULT '0',
+  `verified` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
+  `resettable` tinyint(1) UNSIGNED NOT NULL DEFAULT '1',
+  `roles_mask` int(10) UNSIGNED NOT NULL DEFAULT '0',
+  `registered` int(10) UNSIGNED NOT NULL,
+  `last_login` int(10) UNSIGNED DEFAULT NULL,
+  `force_logout` mediumint(7) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `users_confirmations` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,

@@ -74,7 +74,7 @@ class Auth extends UserManager
     private function enhanceHttpSecurity()
     {
         // remove exposure of PHP version (at least where possible)
-        \header_remove('X-Powered-By');
+//        \header_remove('X-Powered-By');
 
         // if the user is signed in
         if ($this->isLoggedIn()) {
@@ -116,7 +116,8 @@ class Auth extends UserManager
                 if (!empty($parts[0]) && !empty($parts[1])) {
                     $rememberData = $this->db
                         ->query(
-                            'SELECT a.user, a.token, a.expires, b.email, b.username, b.status, b.roles_mask, b.force_logout
+                            'SELECT a.user, a.token, a.expires, b.email, b.username, 
+                                    b.avatar, b.status, b.roles_mask, b.force_logout
                                 FROM users_remembered a
                                 JOIN users b ON a.user = b.id
                                 WHERE a.selector = ?',
@@ -134,6 +135,7 @@ class Auth extends UserManager
                                         $rememberData['user'],
                                         $rememberData['email'],
                                         $rememberData['username'],
+                                        $rememberData['avatar'],
                                         $rememberData['status'],
                                         $rememberData['roles_mask'],
                                         $rememberData['force_logout'],
@@ -166,7 +168,7 @@ class Auth extends UserManager
             if (($_SESSION[self::SESSION_FIELD_LAST_RESYNC] + $this->sessionResyncInterval) <= \time()) {
                 $authoritativeData = $this->db
                     ->query(
-                        'SELECT email, username, status, roles_mask, force_logout
+                        'SELECT email, username, avatar, status, roles_mask, force_logout
                             FROM users
                             WHERE id = ?',
                         [$this->getUserId()]
@@ -188,6 +190,7 @@ class Auth extends UserManager
                         // the session data needs to be updated
                         $_SESSION[self::SESSION_FIELD_EMAIL] = $authoritativeData['email'];
                         $_SESSION[self::SESSION_FIELD_USERNAME] = $authoritativeData['username'];
+                        $_SESSION[self::SESSION_FIELD_AVATAR] = $authoritativeData['avatar'];
                         $_SESSION[self::SESSION_FIELD_STATUS] = (int) $authoritativeData['status'];
                         $_SESSION[self::SESSION_FIELD_ROLES] = (int) $authoritativeData['roles_mask'];
 
@@ -233,19 +236,19 @@ class Auth extends UserManager
      */
     public function register($email, $password, $username = null, callable $callback = null)
     {
-//            $this->throttle(
-//                    [ 'enumerateUsers', $this->getIpAddress() ],
-//                    1,
-//                    (60 * 60),
-//                    75
-//                );
-//            $this->throttle(
-//                    [ 'createNewAccount', $this->getIpAddress() ],
-//                    1,
-//                    (60 * 60 * 12),
-//                    5,
-//                    true
-//            );
+            $this->throttle(
+                    [ 'enumerateUsers', $this->getIpAddress() ],
+                    1,
+                    (60 * 60),
+                    75
+                );
+            $this->throttle(
+                    [ 'createNewAccount', $this->getIpAddress() ],
+                    1,
+                    (60 * 60 * 12),
+                    5,
+                    true
+            );
 
             $newUserId = $this->createUserInternal(false, $email, $password, $username, $callback);
 
@@ -451,6 +454,7 @@ class Auth extends UserManager
             unset($_SESSION[self::SESSION_FIELD_USER_ID]);
             unset($_SESSION[self::SESSION_FIELD_EMAIL]);
             unset($_SESSION[self::SESSION_FIELD_USERNAME]);
+            unset($_SESSION[self::SESSION_FIELD_AVATAR]);
             unset($_SESSION[self::SESSION_FIELD_STATUS]);
             unset($_SESSION[self::SESSION_FIELD_ROLES]);
             unset($_SESSION[self::SESSION_FIELD_REMEMBERED]);
@@ -610,7 +614,7 @@ class Auth extends UserManager
         }
     }
 
-    protected function onLoginSuccessful($userId, $email, $username, $status, $roles, $forceLogout, $remembered)
+    protected function onLoginSuccessful($userId, $email, $username, $avatar, $status, $roles, $forceLogout, $remembered)
     {
         // update the timestamp of the user's last login
         $ec = new DbErrorCatcher();
@@ -618,7 +622,7 @@ class Auth extends UserManager
                 ->where('id', $userId)
                 ->update('users', ['last_login' => \time()]);
         $ec->catchError(new DatabaseError('Error updating users last login time'));
-        parent::onLoginSuccessful($userId, $email, $username, $status, $roles, $forceLogout, $remembered);
+        parent::onLoginSuccessful($userId, $email, $username, $avatar, $status, $roles, $forceLogout, $remembered);
     }
 
     /**
@@ -757,12 +761,13 @@ class Auth extends UserManager
             if ($emailBeforeAndAfter[1] !== null) {
                 $userData = $this->getUserDataByEmailAddress(
                     $emailBeforeAndAfter[1],
-                    [ 'id', 'email', 'username', 'status', 'roles_mask', 'force_logout' ]
+                    [ 'id', 'email', 'username', 'avatar','status', 'roles_mask', 'force_logout' ]
                 );
 
                 $this->onLoginSuccessful(
                         $userData['id'],
                         $userData['email'],
+                        $userData['avatar'],
                         $userData['username'],
                         $userData['status'],
                         $userData['roles_mask'],
@@ -848,7 +853,7 @@ class Auth extends UserManager
         if ($this->isLoggedIn()) {
             $this->throttle(
                     ['enumerateUsers', $this->getIpAddress()],
-                    1,
+                    5,
                     (60 * 60),
                     75
             );
@@ -887,12 +892,12 @@ class Auth extends UserManager
 
             $this->throttle(
                     ['requestEmailChange', 'userId', $this->getUserId()],
-                    1,
+                    5,
                     (60 * 60 * 24)
             );
             $this->throttle(
                     ['requestEmailChange', $this->getIpAddress()],
-                    1,
+                    5,
                     (60 * 60 * 24),
                     3
             );
@@ -1126,7 +1131,7 @@ class Auth extends UserManager
                 true
         );
 
-        $columnsToFetch = ['id', 'email', 'password', 'verified', 'username', 'status', 'roles_mask', 'force_logout'];
+        $columnsToFetch = ['id', 'email', 'password', 'verified', 'username', 'avatar', 'status', 'roles_mask', 'force_logout'];
 
         if ($email !== null) {
             // attempt to look up the account information using the specified email address
@@ -1156,7 +1161,16 @@ class Auth extends UserManager
 
             if ((int)$userData['verified'] === 1) {
                 if (!isset($onBeforeSuccess) || (\is_callable($onBeforeSuccess) && $onBeforeSuccess($userData['id']) === true)) {
-                    $this->onLoginSuccessful($userData['id'], $userData['email'], $userData['username'], $userData['status'], $userData['roles_mask'], $userData['force_logout'], false);
+                    $this->onLoginSuccessful(
+                            $userData['id'],
+                            $userData['email'],
+                            $userData['username'],
+                            $userData['avatar'],
+                            $userData['status'],
+                            $userData['roles_mask'],
+                            $userData['force_logout'],
+                            false
+                    );
 
                     // continue to support the old parameter format
                     if ($rememberDuration === true) {
@@ -1446,13 +1460,14 @@ class Auth extends UserManager
         if (!$this->isLoggedIn()) {
             $userData = $this->getUserDataByEmailAddress(
                 $idAndEmail['email'],
-                [ 'username', 'status', 'roles_mask', 'force_logout' ]
+                [ 'username', 'avatar', 'status', 'roles_mask', 'force_logout' ]
             );
 
             $this->onLoginSuccessful(
                     $idAndEmail['id'],
                     $idAndEmail['email'],
                     $userData['username'],
+                    $userData['avatar'],
                     $userData['status'],
                     $userData['roles_mask'],
                     $userData['force_logout'],
@@ -1661,6 +1676,20 @@ class Auth extends UserManager
     {
         if (isset($_SESSION) && isset($_SESSION[self::SESSION_FIELD_STATUS])) {
             return $_SESSION[self::SESSION_FIELD_STATUS];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the currently signed-in user's status by reading from the session
+     *
+     * @return int the status as one of the constants from the {@see Status} class
+     */
+    public function getAvatar()
+    {
+        if (isset($_SESSION) && isset($_SESSION[self::SESSION_FIELD_AVATAR])) {
+            return $_SESSION[self::SESSION_FIELD_AVATAR];
         } else {
             return null;
         }

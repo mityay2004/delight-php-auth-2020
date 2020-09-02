@@ -10,14 +10,14 @@ namespace Delight\Auth;
 
 class Role 
 {
-    const ADMIN = 1;
+    const ADMIN = 1;            //+
     const AUTHOR = 2;
     const COLLABORATOR = 4;
     const CONSULTANT = 8;
     const CONSUMER = 16;
     const CONTRIBUTOR = 32;
     const COORDINATOR = 64;
-    const CREATOR = 128;
+    const CREATOR = 128;        //+
     const DEVELOPER = 256;
     const DIRECTOR = 512;
     const EDITOR = 1024;

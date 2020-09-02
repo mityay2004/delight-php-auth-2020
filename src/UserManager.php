@@ -31,6 +31,8 @@ abstract class UserManager
     const SESSION_FIELD_EMAIL = 'auth_email';
     /** @var string session field for the display name (if any) of the user who is currently signed in (if any) */
     const SESSION_FIELD_USERNAME = 'auth_username';
+    /** @var string session field for the display name (if any) of the user who is currently signed in (if any) */
+    const SESSION_FIELD_AVATAR = 'auth_avatar';
     /** @var string session field for the status of the user who is currently signed in (if any) as one of the constants from the {@see Status} class */
     const SESSION_FIELD_STATUS = 'auth_status';
     /** @var string session field for the roles of the user who is currently signed in (if any) as a bitmask using constants from the {@see Role} class */
@@ -202,6 +204,7 @@ abstract class UserManager
      * @param int $userId the ID of the user
      * @param string $email the email address of the user
      * @param string $username the display name (if any) of the user
+     * @param string $avatar the display avatar (if any) of the user
      * @param int $status the status of the user as one of the constants from the {@see Status} class
      * @param int $roles the roles of the user as a bitmask using constants from the {@see Role} class
      * @param int $forceLogout the counter that keeps track of forced logouts that need to be performed in the current session
@@ -212,6 +215,7 @@ abstract class UserManager
             $userId,
             $email,
             $username,
+            $avatar,
             $status,
             $roles,
             $forceLogout,
@@ -225,6 +229,7 @@ abstract class UserManager
             $_SESSION[self::SESSION_FIELD_USER_ID] = (int) $userId;
             $_SESSION[self::SESSION_FIELD_EMAIL] = $email;
             $_SESSION[self::SESSION_FIELD_USERNAME] = $username;
+            $_SESSION[self::SESSION_FIELD_AVATAR] = $avatar;
             $_SESSION[self::SESSION_FIELD_STATUS] = (int) $status;
             $_SESSION[self::SESSION_FIELD_ROLES] = (int) $roles;
             $_SESSION[self::SESSION_FIELD_FORCE_LOGOUT] = (int) $forceLogout;
